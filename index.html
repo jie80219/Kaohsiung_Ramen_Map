@@ -155,6 +155,21 @@ select.sel{
   border:1px solid var(--line);background:var(--surface);color:var(--ink);
   padding:4px 8px;border-radius:var(--radius);font-size:13px;
 }
+.search-wrap{position:relative;flex:1 1 260px;min-width:200px;max-width:460px}
+input.search{
+  width:100%;border:1px solid var(--line);background:var(--surface);color:var(--ink);
+  padding:6px 30px 6px 11px;border-radius:999px;font-size:13.5px;font-family:inherit;
+  transition:border-color .12s;
+}
+input.search::placeholder{color:var(--ink-3)}
+input.search:focus{border-color:var(--indigo-soft)}
+button.clearq{
+  position:absolute;right:4px;top:50%;transform:translateY(-50%);
+  border:0;background:transparent;color:var(--ink-3);cursor:pointer;
+  font-size:15px;line-height:1;padding:5px 7px;border-radius:50%;
+}
+button.clearq:hover{color:var(--shu)}
+mark.hit{background:var(--shu-soft);color:var(--shu);padding:0 1px;border-radius:2px}
 :focus-visible{outline:2px solid var(--shu);outline-offset:2px}
 
 /* ---------- 卡片 ---------- */
@@ -220,6 +235,19 @@ table.wk td:first-child{width:2.6em;color:var(--ink-3)}
 table.wk tr.is-today td{color:var(--ink);font-weight:600}
 table.wk td.rest{color:var(--ink-3)}
 
+.legend{
+  display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;
+  margin:0 0 16px;font-size:12px;color:var(--ink-3);
+}
+.legend i{
+  display:inline-block;width:3px;height:13px;border-radius:2px;
+  margin-right:6px;vertical-align:-2px;
+}
+.legend span{white-space:nowrap}
+.legend .k-open i{background:var(--open)}
+.legend .k-shut i{background:var(--line)}
+.legend .k-unknown i{background:var(--shut)}
+
 .empty{
   border:1px dashed var(--line);border-radius:var(--radius);
   padding:36px 20px;text-align:center;color:var(--ink-3);font-size:14px;
@@ -260,6 +288,14 @@ footer code{
 
 <div class="controls">
   <div class="inner">
+    <div class="ctl-line">
+      <span class="lbl">搜尋</span>
+      <span class="search-wrap">
+        <input class="search" id="q" type="search" autocomplete="off"
+               placeholder="店名或路名，例如 家系、裕誠路、五福二路" aria-label="搜尋店名或路名">
+        <button class="clearq" id="clearq" type="button" aria-label="清除搜尋" hidden>&times;</button>
+      </span>
+    </div>
     <div class="ctl-line" id="areaRow">
       <span class="lbl">行政區</span>
     </div>
@@ -280,8 +316,14 @@ footer code{
 </div>
 
 <div class="wrap">
+  <p class="legend">
+    <span>卡片左邊色帶＝現在的營業狀態：</span>
+    <span class="k-open"><i></i>營業中</span>
+    <span class="k-shut"><i></i>現在沒開</span>
+    <span class="k-unknown"><i></i>時間待確認</span>
+  </p>
   <div class="grid" id="grid"></div>
-  <div class="empty" id="empty" hidden>這個條件下沒有店。把「現在營業中」關掉，或選其他行政區。</div>
+  <div class="empty" id="empty" hidden></div>
 
   <footer>
     <h3>資料怎麼來的</h3>
@@ -300,6 +342,12 @@ footer code{
       <li><b>森·拉麵</b>：地圖只露出「週二公休、週三 18:00 開始營業」，完整週表展不開；店名自己寫「最後收客 00:15」。</li>
     </ul>
     <p>湯頭標籤只在店名或地圖登記名稱裡直接寫明時才標（例如「濃厚豚骨拉麵專賣店」「東京醬油拉麵」「雞湯專門店」），沒寫的就不標。</p>
+    <h3>顏色怎麼看</h3>
+    <ul>
+      <li><b>卡片左邊的色帶</b>與狀態圓點是同一組：綠＝此刻營業中、灰＝現在沒開、琥珀＝地圖上查不到營業時間。跨午夜的店（一川麵舖做到凌晨 2:00、金田家到 1:00）也會正確算進「營業中」。</li>
+      <li><b>朱紅色</b>只用在會變動的數字與標籤上：評分、湯頭標籤、搜尋命中的字。整頁只有這一個強調色。</li>
+      <li><b>靛藍</b>是版面的底色調：頁首暖簾、選中的篩選鈕、地址連結。</li>
+    </ul>
     <p>營業時間會變，出門前建議再點一次地圖連結確認。</p>
   </footer>
 </div>
@@ -422,7 +470,7 @@ const areas = [...new Set(STORES.map(s => s.area))];
 const areaCount = a => STORES.filter(s => s.area === a).length;
 areas.sort((a,b) => areaCount(b) - areaCount(a) || a.localeCompare(b,"zh-Hant"));
 
-let fArea = "all", fNow = false, fSort = "score";
+let fArea = "all", fNow = false, fSort = "score", fQ = "";
 
 const grid  = document.getElementById("grid");
 const empty = document.getElementById("empty");
@@ -454,10 +502,39 @@ nowBtn.addEventListener("click", () => {
   nowBtn.setAttribute("aria-pressed", String(fNow));
   render();
 });
+const qEl = document.getElementById("q");
+const clearBtn = document.getElementById("clearq");
+qEl.addEventListener("input", () => {
+  fQ = qEl.value.trim();
+  clearBtn.hidden = fQ === "";
+  render();
+});
+qEl.addEventListener("keydown", e => {
+  if(e.key === "Escape"){ qEl.value = ""; fQ = ""; clearBtn.hidden = true; render(); }
+});
+clearBtn.addEventListener("click", () => {
+  qEl.value = ""; fQ = ""; clearBtn.hidden = true; qEl.focus(); render();
+});
+
 document.getElementById("sortSel").addEventListener("change", e => {
   fSort = e.target.value;
   render();
 });
+
+// 拉麵店名常混用日式漢字與異體字，搜尋前先統一，讓「雞」也搜得到「鶏白湯」
+const VARIANT = {"\u9dc4":"\u96de","\u9d8f":"\u96de","\u9eaa":"\u9eb5","\u732a":"\u8c6c","\u6ca2":"\u6fa4","\u4f1d":"\u50b3","\u5b9f":"\u5be6","\u9ede":"\u9ede"};
+const norm = t => t.toLowerCase().replace(/[\u9dc4\u9d8f\u9eaa\u732a\u6ca2\u4f1d\u5b9f]/g, ch => VARIANT[ch] || ch);
+// 搜尋比對的欄位：店名、地址（含路名）、行政區、湯頭
+const haystack = st => norm(st.n + " " + st.addr + " " + st.area + " " + (st.soup || ""));
+const esc = t => t.replace(/[&<>]/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]));
+function hl(text){
+  const safe = esc(text);
+  if(!fQ) return safe;
+  const q = esc(fQ);
+  const i = norm(safe).indexOf(norm(q));
+  if(i < 0) return safe;
+  return safe.slice(0, i) + '<mark class="hit">' + safe.slice(i, i + q.length) + '</mark>' + safe.slice(i + q.length);
+}
 
 function card(st){
   const open = isOpenNow(st);
@@ -479,7 +556,7 @@ function card(st){
 
   el.innerHTML =
     '<div class="head">' +
-      '<h2>' + st.n + '</h2>' +
+      '<h2>' + hl(st.n) + '</h2>' +
       '<div class="score"><b>' + st.r.toFixed(1) + '</b><span>' + st.c.toLocaleString("en-US") + ' 則</span></div>' +
     '</div>' +
     '<div class="tags">' +
@@ -488,7 +565,7 @@ function card(st){
       (st.soup ? '<span class="tag soup">' + st.soup + '</span>' : '') +
     '</div>' +
     '<div class="today">' + todayText(st) + '</div>' +
-    '<div class="addr"><a href="' + mapUrl + '" target="_blank" rel="noopener">' + st.addr + '</a></div>' +
+    '<div class="addr"><a href="' + mapUrl + '" target="_blank" rel="noopener">' + hl(st.addr) + '</a></div>' +
     (st.note ? '<div class="note">' + st.note + '</div>' : '') +
     (st.h ? '<details class="week"><summary>一週營業時間</summary><table class="wk"><tbody>' +
             weekRows + '</tbody></table></details>' : '');
@@ -497,6 +574,7 @@ function card(st){
 
 function render(){
   let list = STORES.filter(s => fArea === "all" || s.area === fArea);
+  if(fQ)   list = list.filter(s => haystack(s).includes(norm(fQ)));
   if(fNow) list = list.filter(s => isOpenNow(s) === true);
 
   if(fSort === "score")        list.sort((a,b) => b.r - a.r || b.c - a.c);
@@ -506,6 +584,9 @@ function render(){
 
   grid.replaceChildren(...list.map(card));
   empty.hidden = list.length > 0;
+  empty.textContent = fQ
+    ? '「' + fQ + '」沒有對到任何店名或路名。試試看只打路名（裕誠路、五福二路）或關鍵字（家系、豚骨）。'
+    : '這個條件下沒有店。把「現在營業中」關掉，或選其他行政區。';
   countEl.textContent = list.length + " / " + STORES.length + " 家";
 }
 
