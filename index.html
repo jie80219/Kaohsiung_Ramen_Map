@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>高雄拉麵地圖</title>
+<meta name="description" content="從 Threads 與 Instagram 爬梳高雄拉麵貼文，逐家用 Google 地圖查證地址與營業時間。">
+<meta name="theme-color" content="#16303f">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#F3F5F2;
+  --surface:#FFFFFF;
+  --surface-2:#E9EDE9;
+  --ink:#16222B;
+  --ink-2:#4C5B62;
+  --ink-3:#7C8A90;
+  --line:#D3DAD6;
+  --indigo:#16303F;
+  --indigo-soft:#2C5871;
+  --shu:#D24A22;
+  --shu-soft:#F5E2DA;
+  --open:#2E7D5B;
+  --open-soft:#DDEDE4;
+  --shut:#96703A;
+  --shut-soft:#F2E9D9;
+  --radius:3px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0D1519;
+    --surface:#141F26;
+    --surface-2:#1B2A33;
+    --ink:#E6EDF0;
+    --ink-2:#A7B7BF;
+    --ink-3:#75868E;
+    --line:#283A44;
+    --indigo:#9EC6DC;
+    --indigo-soft:#7FAAC2;
+    --shu:#F0724A;
+    --shu-soft:#3A2018;
+    --open:#68C99B;
+    --open-soft:#12291F;
+    --shut:#D8B478;
+    --shut-soft:#2A2214;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0D1519;
+  --surface:#141F26;
+  --surface-2:#1B2A33;
+  --ink:#E6EDF0;
+  --ink-2:#A7B7BF;
+  --ink-3:#75868E;
+  --line:#283A44;
+  --indigo:#9EC6DC;
+  --indigo-soft:#7FAAC2;
+  --shu:#F0724A;
+  --shu-soft:#3A2018;
+  --open:#68C99B;
+  --open-soft:#12291F;
+  --shut:#D8B478;
+  --shut-soft:#2A2214;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--ground);
+  color:var(--ink);
+  font-family:"Noto Sans TC",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  font-size:15px;
+  line-height:1.7;
+}
+a{color:inherit}
+button{font:inherit;color:inherit}
+
+.wrap{max-width:1040px;margin:0 auto;padding:0 18px 72px}
+
+/* ---------- 暖簾（noren）標頭 ---------- */
+header.noren{
+  background:var(--indigo);
+  color:#F3F5F2;
+  position:relative;
+  overflow:hidden;
+  border-bottom:1px solid var(--line);
+}
+:root[data-theme="dark"] header.noren,
+:root:not([data-theme="light"]) header.noren{background:#0A1219}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) header.noren{background:var(--indigo)}}
+header.noren .inner{max-width:1040px;margin:0 auto;padding:34px 18px 30px}
+header.noren .kanji{
+  font-family:"Noto Serif TC",serif;
+  font-weight:900;
+  font-size:clamp(30px,7vw,50px);
+  letter-spacing:.06em;
+  line-height:1.15;
+  margin:0;
+  text-wrap:balance;
+  color:#F6F2E9;
+}
+header.noren .kanji em{font-style:normal;color:#F0A868}
+header.noren .sub{
+  margin:12px 0 0;
+  max-width:56ch;
+  color:#B9CBD6;
+  font-size:14px;
+  line-height:1.75;
+}
+header.noren .slits{display:flex;gap:3px;height:8px;margin-top:22px}
+header.noren .slits i{flex:1;background:#F6F2E9;opacity:.22;display:block}
+.meta-row{
+  display:flex;flex-wrap:wrap;gap:8px 20px;align-items:baseline;
+  margin-top:18px;font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:12px;letter-spacing:.04em;color:#8FA9B8;
+}
+.meta-row b{color:#F0A868;font-weight:600}
+
+/* ---------- 控制列 ---------- */
+.controls{
+  position:sticky;top:0;z-index:20;
+  background:color-mix(in srgb,var(--ground) 92%,transparent);
+  backdrop-filter:saturate(180%) blur(12px);
+  -webkit-backdrop-filter:saturate(180%) blur(12px);
+  border-bottom:1px solid var(--line);
+  margin-bottom:24px;
+}
+.controls .inner{max-width:1040px;margin:0 auto;padding:12px 18px}
+.ctl-line{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ctl-line + .ctl-line{margin-top:9px}
+.lbl{
+  font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.12em;
+  color:var(--ink-3);text-transform:uppercase;margin-right:2px;flex:0 0 auto;
+}
+.chip{
+  border:1px solid var(--line);background:var(--surface);
+  padding:4px 11px;border-radius:999px;font-size:13px;cursor:pointer;
+  transition:background .12s,border-color .12s,color .12s;white-space:nowrap;
+}
+.chip:hover{border-color:var(--indigo-soft)}
+.chip[aria-pressed="true"]{background:var(--indigo);color:#F3F5F2;border-color:var(--indigo)}
+:root[data-theme="dark"] .chip[aria-pressed="true"],
+:root:not([data-theme="light"]) .chip[aria-pressed="true"]{color:#0D1519}
+.chip.now[aria-pressed="true"]{background:var(--shu);border-color:var(--shu);color:#fff}
+.chip .n{font-family:"IBM Plex Mono",monospace;font-size:11px;opacity:.6;margin-left:5px}
+.spacer{flex:1 1 auto}
+.count{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink-3);white-space:nowrap}
+select.sel{
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);
+  padding:4px 8px;border-radius:var(--radius);font-size:13px;
+}
+:focus-visible{outline:2px solid var(--shu);outline-offset:2px}
+
+/* ---------- 卡片 ---------- */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px}
+.card{
+  background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--radius);padding:16px 17px 14px;
+  display:flex;flex-direction:column;gap:10px;
+  border-left:3px solid var(--line);
+}
+.card.is-open{border-left-color:var(--open)}
+.card.is-shut{border-left-color:var(--line)}
+.card.is-unknown{border-left-color:var(--shut)}
+.card h2{
+  font-family:"Noto Serif TC",serif;font-weight:700;
+  font-size:18px;line-height:1.4;margin:0;text-wrap:balance;letter-spacing:.01em;
+}
+.head{display:flex;gap:10px;align-items:flex-start;justify-content:space-between}
+.score{
+  flex:0 0 auto;text-align:right;font-family:"IBM Plex Mono",monospace;
+  font-variant-numeric:tabular-nums;line-height:1.25;
+}
+.score b{display:block;font-size:17px;font-weight:600;color:var(--shu)}
+.score span{font-size:11px;color:var(--ink-3)}
+.tags{display:flex;flex-wrap:wrap;gap:5px}
+.tag{
+  font-size:11px;padding:2px 8px;border-radius:999px;
+  background:var(--surface-2);color:var(--ink-2);letter-spacing:.03em;
+}
+.tag.soup{background:var(--shu-soft);color:var(--shu);font-weight:500}
+.state{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:12px;font-weight:500;padding:3px 9px;border-radius:999px;
+  font-family:"IBM Plex Mono",monospace;letter-spacing:.02em;
+}
+.state.open{background:var(--open-soft);color:var(--open)}
+.state.shut{background:var(--surface-2);color:var(--ink-3)}
+.state.unknown{background:var(--shut-soft);color:var(--shut)}
+.state::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.today{
+  font-family:"IBM Plex Mono",monospace;font-size:12.5px;
+  color:var(--ink-2);font-variant-numeric:tabular-nums;
+}
+.addr{font-size:13px;color:var(--ink-2);line-height:1.6}
+.addr a{color:var(--indigo);text-decoration:none;border-bottom:1px solid var(--line)}
+.addr a:hover{border-bottom-color:var(--indigo)}
+.note{
+  font-size:12.5px;color:var(--ink-2);background:var(--surface-2);
+  padding:8px 10px;border-radius:var(--radius);line-height:1.65;
+}
+details.week{margin-top:auto;border-top:1px solid var(--line);padding-top:9px}
+details.week summary{
+  cursor:pointer;font-family:"IBM Plex Mono",monospace;font-size:11px;
+  letter-spacing:.1em;color:var(--ink-3);list-style:none;
+}
+details.week summary::-webkit-details-marker{display:none}
+details.week summary::before{content:"▸ ";}
+details.week[open] summary::before{content:"▾ ";}
+table.wk{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px;
+  font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+table.wk td{padding:2.5px 0;vertical-align:top;color:var(--ink-2)}
+table.wk td:first-child{width:2.6em;color:var(--ink-3)}
+table.wk tr.is-today td{color:var(--ink);font-weight:600}
+table.wk td.rest{color:var(--ink-3)}
+
+.empty{
+  border:1px dashed var(--line);border-radius:var(--radius);
+  padding:36px 20px;text-align:center;color:var(--ink-3);font-size:14px;
+}
+
+/* ---------- 頁尾 ---------- */
+footer{
+  margin-top:44px;padding-top:22px;border-top:1px solid var(--line);
+  font-size:12.5px;color:var(--ink-3);line-height:1.8;
+}
+footer h3{
+  font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-2);margin:0 0 8px;
+}
+footer p{margin:0 0 14px;max-width:70ch}
+footer ul{margin:0 0 14px;padding-left:1.1em;max-width:70ch}
+footer code{
+  font-family:"IBM Plex Mono",monospace;font-size:11.5px;
+  background:var(--surface-2);padding:1px 5px;border-radius:2px;color:var(--ink-2);
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<header class="noren">
+  <div class="inner">
+    <h1 class="kanji">高雄<em>拉麵</em>地圖</h1>
+    <p class="sub">從 Threads 與 Instagram 爬下來的高雄拉麵貼文，每一家都再上 Google 地圖對過店名、地址與一週營業時間。網友貼文與地圖不一致時，以地圖為準；地圖查不到的就標「待確認」，不臆測。</p>
+    <div class="meta-row">
+      <span><b id="mCount">–</b> 家已查證</span>
+      <span>資料查證日 <b>2026-09-09</b></span>
+      <span>來源 <b>Threads · Instagram · Google 地圖</b></span>
+    </div>
+    <div class="slits"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="inner">
+    <div class="ctl-line" id="areaRow">
+      <span class="lbl">行政區</span>
+    </div>
+    <div class="ctl-line">
+      <span class="lbl">狀態</span>
+      <button class="chip now" id="nowBtn" aria-pressed="false">現在營業中</button>
+      <span class="spacer"></span>
+      <label class="lbl" for="sortSel">排序</label>
+      <select class="sel" id="sortSel">
+        <option value="score">評分高到低</option>
+        <option value="reviews">評論數多到少</option>
+        <option value="area">依行政區</option>
+        <option value="name">依店名</option>
+      </select>
+      <span class="count" id="count">–</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" hidden>這個條件下沒有店。把「現在營業中」關掉，或選其他行政區。</div>
+
+  <footer>
+    <h3>資料怎麼來的</h3>
+    <p>先在 Threads 用 11 組關鍵字（高雄拉麵、高雄 拉麵 推薦、左營拉麵、鳳山拉麵、苓雅拉麵、豚骨拉麵 高雄、雞白湯 高雄、沾麵 高雄、家系 高雄、高雄 宵夜 拉麵、高雄拉麵 排隊）搜尋，累積約 95 則貼文、其中 35 則帶得到店名或地址。Instagram 那邊 <code>#高雄拉麵</code> 幾乎都是 Reels 與圖片，店名壓在圖上、抓不到文字，只能當作交叉比對的線索。</p>
+    <p>接著把每一家單獨丟進 Google 地圖（<code>hl=zh-TW</code>）核對：以地圖登記的正式店名為準，抓中文地址、一週營業時間、評分與評論數。</p>
+
+    <h3>沒有收進來的</h3>
+    <ul>
+      <li><b>赤麵廠—新堀江店</b>、<b>鷺足拉麵</b>（新田路239巷）：Google 地圖顯示<b>永久歇業</b>。</li>
+      <li><b>拾玥拉麵</b>、<b>一本拉麵本店</b>（玉竹一街）、<b>ichi</b>：貼文提到，但地圖查無對應店家，寧可不收也不猜。</li>
+    </ul>
+
+    <h3>營業時間標「待確認」的</h3>
+    <ul>
+      <li><b>火山湯海</b>：Google 地圖上這家根本沒填營業時間（顯示「新增營業時間」）。</li>
+      <li><b>森·拉麵</b>：地圖只露出「週二公休、週三 18:00 開始營業」，完整週表展不開；店名自己寫「最後收客 00:15」。</li>
+    </ul>
+    <p>湯頭標籤只在店名或地圖登記名稱裡直接寫明時才標（例如「濃厚豚骨拉麵專賣店」「東京醬油拉麵」「雞湯專門店」），沒寫的就不標。</p>
+    <p>營業時間會變，出門前建議再點一次地圖連結確認。</p>
+  </footer>
+</div>
+
+<script>
+// hours: h[0]=週日 … h[6]=週六。每天是 [開始分鐘, 結束分鐘] 的區間陣列。
+// 跨午夜以 >1440 表示（例：17:00–翌 02:00 → [1020,1560]）。h 為 null = 待確認。
+const D = "2026-09-09";
+const A = [[690,840],[1050,1290]];       // 11:30-14:00 / 17:30-21:30
+const STORES = [
+ {n:"魚月製麵 — 雞湯專門店（市府店）",area:"苓雅",addr:"高雄市苓雅區復興二路188號",r:4.8,c:640,soup:"雞湯",
+  h:[[[690,1140]],[[690,1140]],[[690,1140]],[[690,1140]],[[690,1140]],[[690,1140]],[[690,1140]]]},
+ {n:"火山湯海",area:"左營",addr:"高雄市左營區至真路186號",r:4.1,c:532,h:null,
+  note:"Google 地圖未登記營業時間。網友貼文寫的是至真路86號，地圖登記為186號，以地圖為準。"},
+ {n:"麵屋茶町",area:"左營",addr:"高雄市左營區裕誠路295號",r:4.8,c:689,
+  h:[[[720,1260]],[[720,1260]],[[720,1260]],[[720,1260]],[[720,1260]],[[720,1260]],[[720,1260]]]},
+ {n:"花山二代目拉麵",area:"左營",addr:"高雄市左營區博愛二路310號",r:4.6,c:153,
+  h:[A,A,A,A,A,A,A]},
+ {n:"麵匡匡拉麵食堂 鳳山文化店",area:"鳳山",addr:"高雄市鳳山區文化路152號",r:4.8,c:149,
+  note:"假日中午不休息，一路做到 21:00。",
+  h:[[[660,1260]],[[660,870],[1020,1230]],[[660,870]],[[1020,1230]],[[660,870],[1020,1230]],[[660,870],[1020,1230]],[[660,1260]]]},
+ {n:"幸花鶏白湯拉麵 新興仁愛店",area:"新興",addr:"高雄市新興區仁愛二街122號",r:4.4,c:1505,soup:"雞白湯",
+  h:[[[1050,1380]],[],[[1050,1380]],[[1050,1380]],[[1050,1380]],[[1050,1380]],[[1050,1380]]]},
+ {n:"榮一拉麵 河堤店",area:"三民",addr:"高雄市三民區裕誠路123號",r:4.7,c:247,
+  h:[[[660,840],[1020,1260]],[[690,840],[1020,1260]],[[690,840],[1020,1260]],[[690,840],[1020,1260]],[[690,840],[1020,1260]],[[690,840],[1020,1260]],[[660,840],[1020,1260]]]},
+ {n:"麵屋武藏 武骨",area:"左營",addr:"高雄市左營區站前北路1號3樓",r:4.2,c:2096,
+  note:"在新光三越左營店樓上，週三、週四公休。",
+  h:[[[660,1230]],[[660,1230]],[[660,1230]],[],[],[[660,1260]],[[660,1260]]]},
+ {n:"麵屋栗川",area:"新興",addr:"高雄市新興區五福二路100號",r:4.6,c:342,
+  h:[[[720,870],[1020,1320]],[[1020,1320]],[[1020,1320]],[],[[1020,1320]],[[1020,1320]],[[720,870],[1020,1320]]]},
+ {n:"金田家",area:"左營",addr:"高雄市左營區安吉街380號",r:4.6,c:952,
+  note:"多數日子做到凌晨 1:00，週三只到 22:30，週四公休。",
+  h:[[[690,870],[1050,1500]],[[690,870],[1050,1500]],[[690,870],[1050,1500]],[[690,870],[1050,1350]],[],[[690,870],[1050,1500]],[[690,870],[1050,1500]]]},
+ {n:"初代花山拉麵",area:"新興",addr:"高雄市新興區民族二路5號",r:4.5,c:824,
+  h:[A,A,A,A,A,A,A]},
+ {n:"洛瓔 — 蝦濃湯拉麵、雞貝清湯拉麵",area:"三民",addr:"高雄市三民區重慶街1-9號",r:4.8,c:701,soup:"蝦濃湯／雞貝清湯",
+  note:"地圖店名直接註明：不訂位，14:30 與 20:30 最後點餐。",
+  h:[[[690,870],[1020,1230]],[[690,870],[1020,1230]],[[690,870],[1020,1230]],[[690,870],[1020,1230]],[[690,870],[1020,1230]],[[690,870],[1020,1230]],[[690,870],[1020,1230]]]},
+ {n:"神宮寺 高雄漢神店",area:"左營",addr:"高雄市左營區博愛二路777號4樓",r:3.6,c:442,
+  note:"漢神巨蛋 4 樓，百貨營業時間，週五、週六延到 21:00。",
+  h:[[[660,1230]],[[660,1230]],[[660,1230]],[[660,1230]],[[660,1230]],[[660,1260]],[[660,1260]]]},
+ {n:"野貓客棧 Stray Cats Inn",area:"苓雅",addr:"高雄市苓雅區仁智街11號",r:4.8,c:116,
+  note:"拉麵配啤酒炸物的宵夜路線，週五、週六做到凌晨 1:00。",
+  h:[[[1020,1440]],[[1050,1440]],[[1050,1440]],[[1050,1440]],[[1050,1440]],[[1020,1500]],[[1020,1500]]]},
+ {n:"麵屋祥 東京醬油拉麵",area:"鼓山",addr:"高雄市鼓山區大順一路459號1樓",r:4.3,c:2082,soup:"東京醬油",
+  note:"平日只做晚上，週六、週日才有中午場。",
+  h:[[[690,840],[1050,1290]],[[1050,1290]],[[1050,1290]],[[1050,1290]],[[1050,1290]],[[1050,1290]],[[690,840],[1050,1290]]]},
+ {n:"一本拉麵·梟",area:"苓雅",addr:"高雄市苓雅區廣州一街123之1號",r:4.4,c:1245,
+  h:[[[720,960],[1020,1260]],[[720,1260]],[[720,1260]],[[720,1260]],[[720,1260]],[[720,1260]],[[720,960],[1020,1260]]]},
+ {n:"屋台拉麵",area:"燕巢",addr:"高雄市燕巢區中民路632號",r:4.7,c:270,
+  note:"地圖店名註明「公休請見 FB」，臨時公休以粉專為準。",
+  h:[[[690,840],[1050,1200]],[[690,840],[1050,1200]],[[690,840],[1050,1200]],[[690,840],[1050,1200]],[],[[690,840],[1050,1200]],[[690,840],[1050,1200]]]},
+ {n:"鹿鳴商店",area:"新興",addr:"高雄市新興區民族二路11號",r:4.5,c:628,
+  h:[[[720,840],[1050,1320]],[],[[1050,1320]],[[1050,1320]],[[1050,1320]],[[1050,1320]],[[720,840],[1050,1320]]]},
+ {n:"獺鯌拉麵",area:"鹽埕",addr:"高雄市鹽埕區大仁路164號",r:4.5,c:550,
+  h:[[[1050,1350]],[[1050,1350]],[[1050,1350]],[[1050,1350]],[[1050,1350]],[[1050,1350]],[[1050,1350]]]},
+ {n:"森·拉麵",area:"三民",addr:"高雄市三民區鼎山街418號",r:4.4,c:1017,h:null,
+  note:"地圖只顯示得出「週二公休、週三 18:00 開始營業」，完整週表展不開。店名自己寫「最後收客 00:15」，屬於深夜場。"},
+ {n:"麵屋重生",area:"前金",addr:"高雄市前金區中華四路315號",r:4.5,c:341,
+  h:[[[690,840],[1020,1260]],[[690,840],[1020,1260]],[[690,840],[1020,1260]],[[690,840],[1020,1260]],[[690,840],[1020,1260]],[[690,840],[1020,1260]],[[690,840],[1020,1260]]]},
+ {n:"珧金",area:"鳳山",addr:"高雄市鳳山區府前路34號",r:4.7,c:252,
+  note:"只做下午到晚上，週日、週一連休。",
+  h:[[],[],[[960,1230]],[[960,1230]],[[960,1230]],[[960,1230]],[[960,1230]]]},
+ {n:"瀧澤軒食堂［拉麵屋］苓雅林泉店",area:"苓雅",addr:"高雄市苓雅區林泉街44號",r:4.5,c:1733,
+  h:[[[690,840],[1020,1200]],[[690,840],[1020,1200]],[],[[690,840],[1020,1200]],[[690,840],[1020,1200]],[[690,840],[1020,1200]],[[690,840],[1020,1200]]]},
+ {n:"瀧澤軒食堂［拉麵屋］左營安吉店",area:"左營",addr:"高雄市左營區安吉街134號",r:4.8,c:352,
+  note:"與林泉本店同系統，公休日不同（這家休週三）。",
+  h:[[[690,840],[1020,1230]],[[690,840],[1020,1230]],[[690,840],[1020,1230]],[],[[690,840],[1020,1230]],[[690,840],[1020,1230]],[[690,840],[1020,1230]]]},
+ {n:"吉胤家",area:"三民",addr:"高雄市三民區慶雲街105號",r:4.6,c:1007,soup:"橫濱家系",
+  note:"一週只開四天，週三、週四中午場只到 13:00，很容易撲空。",
+  h:[[],[],[],[[660,780],[1050,1200]],[[660,780],[1050,1200]],[[1050,1260]],[[1050,1260]]]},
+ {n:"晴拉麵",area:"苓雅",addr:"高雄市苓雅區福安路351號",r:4.6,c:856,
+  h:[[[660,870],[1050,1330]],[[660,870],[1050,1330]],[[660,870],[1050,1330]],[[660,870],[1050,1330]],[[660,870],[1050,1330]],[[660,870],[1050,1330]],[[660,870],[1050,1330]]]},
+ {n:"貳水 Aqua² 拉麵の專賣店",area:"三民",addr:"高雄市三民區建工路300號",r:4.6,c:485,
+  h:[[[690,840],[1020,1260]],[],[[1020,1260]],[[1020,1260]],[[1020,1260]],[[1020,1260]],[[690,840],[1020,1260]]]},
+ {n:"一支炭拉麵屋",area:"左營",addr:"高雄市左營區新庄仔路259號",r:4.7,c:624,
+  note:"週一到週三連休，開的四天都做到午夜。",
+  h:[[[1020,1440]],[],[],[],[[1020,1440]],[[1020,1440]],[[1020,1440]]]},
+ {n:"一川麵舖",area:"鳳山",addr:"高雄市鳳山區文衡路491號",r:4.4,c:561,
+  note:"全高雄最好找的深夜拉麵之一：天天 11:00 開到翌日凌晨 2:00。",
+  h:[[[660,1560]],[[660,1560]],[[660,1560]],[[660,1560]],[[660,1560]],[[660,1560]],[[660,1560]]]},
+ {n:"景賀拉麵 鳳山店",area:"鳳山",addr:"高雄市鳳山區文龍東路371號",r:4.5,c:333,
+  h:[[[660,840],[1020,1200]],[[660,840],[1020,1200]],[[660,840],[1020,1200]],[[660,840],[1020,1200]],[[660,840],[1020,1200]],[[660,840],[1020,1200]],[[660,840],[1020,1200]]]},
+ {n:"赤湘南 楠梓常德店",area:"楠梓",addr:"高雄市楠梓區常德路246號",r:4.4,c:335,
+  h:[[],[[690,840],[1050,1200]],[[690,840],[1050,1200]],[[690,840],[1050,1200]],[[690,840],[1050,1200]],[[690,840],[1050,1200]],[[690,840],[1050,1200]]]},
+ {n:"炎豚拉麵 濃厚豚骨拉麵專賣店",area:"楠梓",addr:"高雄市楠梓區後昌路990號",r:4.3,c:220,soup:"濃厚豚骨",
+  h:[[[690,840],[1020,1200]],[[690,840],[1020,1200]],[[690,840],[1020,1200]],[],[[690,840],[1020,1200]],[[690,840],[1020,1200]],[[690,840],[1020,1200]]]},
+ {n:"赤麵廠 岡山",area:"岡山",addr:"高雄市岡山區開元街87號",r:4.6,c:561,
+  note:"新堀江店已永久歇業，目前只剩岡山這家。",
+  h:[[[990,1260]],[[990,1260]],[[990,1260]],[[990,1260]],[],[[990,1260]],[[990,1260]]]}
+];
+
+const DAY = ["日","一","二","三","四","五","六"];
+const pad = n => String(n).padStart(2,"0");
+const hhmm = m => pad(Math.floor((m%1440)/60)) + ":" + pad(m%60);
+const rangeText = r => hhmm(r[0]) + "–" + hhmm(r[1]) + (r[1] >= 1440 ? "" : "");
+
+function nowParts(){
+  const d = new Date();
+  return {day:d.getDay(), min:d.getHours()*60 + d.getMinutes()};
+}
+// 現在是否營業：檢查今天，也檢查昨天跨午夜延伸過來的區間
+function isOpenNow(st){
+  if(!st.h) return null;
+  const {day,min} = nowParts();
+  for(const r of st.h[day]) if(min >= r[0] && min < r[1]) return true;
+  const y = (day + 6) % 7;
+  for(const r of st.h[y]) if(r[1] > 1440 && (min + 1440) < r[1]) return true;
+  return false;
+}
+function todayText(st){
+  if(!st.h) return "營業時間待確認";
+  const {day} = nowParts();
+  const t = st.h[day];
+  if(!t.length) return "今天公休";
+  return t.map(rangeText).join("　");
+}
+
+const areas = [...new Set(STORES.map(s => s.area))];
+const areaCount = a => STORES.filter(s => s.area === a).length;
+areas.sort((a,b) => areaCount(b) - areaCount(a) || a.localeCompare(b,"zh-Hant"));
+
+let fArea = "all", fNow = false, fSort = "score";
+
+const grid  = document.getElementById("grid");
+const empty = document.getElementById("empty");
+const countEl = document.getElementById("count");
+document.getElementById("mCount").textContent = STORES.length;
+
+// 行政區篩選鈕
+const areaRow = document.getElementById("areaRow");
+function mkChip(label, val, n){
+  const b = document.createElement("button");
+  b.className = "chip";
+  b.setAttribute("aria-pressed", val === fArea ? "true" : "false");
+  b.dataset.area = val;
+  b.innerHTML = label + '<span class="n">' + n + '</span>';
+  b.addEventListener("click", () => {
+    fArea = val;
+    [...areaRow.querySelectorAll(".chip")].forEach(c =>
+      c.setAttribute("aria-pressed", c.dataset.area === fArea ? "true" : "false"));
+    render();
+  });
+  areaRow.appendChild(b);
+}
+mkChip("全部", "all", STORES.length);
+areas.forEach(a => mkChip(a, a, areaCount(a)));
+
+const nowBtn = document.getElementById("nowBtn");
+nowBtn.addEventListener("click", () => {
+  fNow = !fNow;
+  nowBtn.setAttribute("aria-pressed", String(fNow));
+  render();
+});
+document.getElementById("sortSel").addEventListener("change", e => {
+  fSort = e.target.value;
+  render();
+});
+
+function card(st){
+  const open = isOpenNow(st);
+  const el = document.createElement("article");
+  el.className = "card " + (open === null ? "is-unknown" : open ? "is-open" : "is-shut");
+
+  const stateCls  = open === null ? "unknown" : open ? "open" : "shut";
+  const stateText = open === null ? "待確認"   : open ? "現在營業中" : "現在沒開";
+  const mapUrl = "https://www.google.com/maps/search/" +
+                 encodeURIComponent(st.n + " " + st.addr) + "?hl=zh-TW";
+  const {day} = nowParts();
+
+  const weekRows = st.h ? st.h.map((t,i) => {
+    const isT = i === day;
+    const txt = t.length ? t.map(rangeText).join("　") : "公休";
+    return '<tr class="' + (isT ? "is-today" : "") + '"><td>' + DAY[i] +
+           '</td><td class="' + (t.length ? "" : "rest") + '">' + txt + '</td></tr>';
+  }).join("") : "";
+
+  el.innerHTML =
+    '<div class="head">' +
+      '<h2>' + st.n + '</h2>' +
+      '<div class="score"><b>' + st.r.toFixed(1) + '</b><span>' + st.c.toLocaleString("en-US") + ' 則</span></div>' +
+    '</div>' +
+    '<div class="tags">' +
+      '<span class="state ' + stateCls + '">' + stateText + '</span>' +
+      '<span class="tag">' + st.area + '</span>' +
+      (st.soup ? '<span class="tag soup">' + st.soup + '</span>' : '') +
+    '</div>' +
+    '<div class="today">' + todayText(st) + '</div>' +
+    '<div class="addr"><a href="' + mapUrl + '" target="_blank" rel="noopener">' + st.addr + '</a></div>' +
+    (st.note ? '<div class="note">' + st.note + '</div>' : '') +
+    (st.h ? '<details class="week"><summary>一週營業時間</summary><table class="wk"><tbody>' +
+            weekRows + '</tbody></table></details>' : '');
+  return el;
+}
+
+function render(){
+  let list = STORES.filter(s => fArea === "all" || s.area === fArea);
+  if(fNow) list = list.filter(s => isOpenNow(s) === true);
+
+  if(fSort === "score")        list.sort((a,b) => b.r - a.r || b.c - a.c);
+  else if(fSort === "reviews") list.sort((a,b) => b.c - a.c);
+  else if(fSort === "name")    list.sort((a,b) => a.n.localeCompare(b.n,"zh-Hant"));
+  else                         list.sort((a,b) => a.area.localeCompare(b.area,"zh-Hant") || b.r - a.r);
+
+  grid.replaceChildren(...list.map(card));
+  empty.hidden = list.length > 0;
+  countEl.textContent = list.length + " / " + STORES.length + " 家";
+}
+
+render();
+// 每分鐘重算「現在營業中」
+setInterval(render, 60000);
+</script>
+</body>
+</html>
